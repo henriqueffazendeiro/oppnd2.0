@@ -3,6 +3,7 @@ class GmailReadReceipts {
     this.API_BASE = 'https://your-vercel-domain.vercel.app/api';
     this.isExtensionActive = false;
     this.processedEmails = new Set();
+    console.log('Gmail Read Receipts Extension: Initializing...');
     this.init();
   }
 
@@ -18,6 +19,8 @@ class GmailReadReceipts {
   }
 
   observeGmailChanges() {
+    console.log('Gmail Read Receipts Extension: Setting up observers...');
+    
     const observer = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
         if (mutation.type === 'childList') {
@@ -32,19 +35,49 @@ class GmailReadReceipts {
       subtree: true
     });
 
-    // Initial processing
-    setTimeout(() => {
+    // Initial processing with multiple attempts
+    const initialProcess = () => {
+      console.log('Gmail Read Receipts Extension: Processing emails...');
       this.processSentEmails();
       this.processInboxEmails();
-    }, 2000);
+    };
+
+    setTimeout(initialProcess, 1000);
+    setTimeout(initialProcess, 3000);
+    setTimeout(initialProcess, 5000);
   }
 
   processSentEmails() {
-    // Target sent emails in class="TN bzz aHS-bnu"
-    const sentContainer = document.querySelector('.TN.bzz.aHS-bnu');
-    if (!sentContainer) return;
+    console.log('Gmail Read Receipts Extension: Looking for sent emails...');
+    
+    // Try multiple selectors for Gmail's sent emails
+    const sentSelectors = [
+      '.TN.bzz.aHS-bnu', // Original selector
+      '[data-action-data*="sent"]', // Alternative
+      '.ar9.T-I-J3.J-J5-Ji', // Sent folder
+    ];
 
-    const emails = sentContainer.querySelectorAll('.zA.yO, .zA.zE');
+    let sentContainer = null;
+    for (const selector of sentSelectors) {
+      sentContainer = document.querySelector(selector);
+      if (sentContainer) {
+        console.log(`Gmail Read Receipts Extension: Found sent container with selector: ${selector}`);
+        break;
+      }
+    }
+
+    if (!sentContainer) {
+      // Try finding emails anywhere if we're in sent folder
+      const emails = document.querySelectorAll('.zA.yO, .zA.zE, tr.zA');
+      if (emails.length > 0) {
+        console.log(`Gmail Read Receipts Extension: Found ${emails.length} emails (fallback method)`);
+        emails.forEach(email => this.processEmail(email, 'sent'));
+      }
+      return;
+    }
+
+    const emails = sentContainer.querySelectorAll('.zA.yO, .zA.zE, tr.zA');
+    console.log(`Gmail Read Receipts Extension: Found ${emails.length} sent emails`);
     emails.forEach(email => this.processEmail(email, 'sent'));
   }
 
@@ -86,24 +119,71 @@ class GmailReadReceipts {
   }
 
   addTicksToSentEmail(emailElement, emailId) {
-    const targetElement = emailElement.querySelector('.apU.xY');
-    const nextElement = emailElement.querySelector('.oZ-x3.xY');
+    console.log(`Gmail Read Receipts Extension: Processing email ${emailId}`);
     
-    if (!targetElement || !nextElement) return;
+    // Try multiple insertion points
+    const insertionTargets = [
+      { target: '.apU.xY', next: '.oZ-x3.xY' },
+      { target: '.xY', next: '.y2' },
+      { target: 'td.xY', next: 'td.y2' },
+      { target: '.yf', next: '.y2' }
+    ];
+
+    let targetElement = null;
+    let nextElement = null;
+
+    for (const targets of insertionTargets) {
+      targetElement = emailElement.querySelector(targets.target);
+      nextElement = emailElement.querySelector(targets.next);
+      
+      if (targetElement && nextElement) {
+        console.log(`Gmail Read Receipts Extension: Found insertion point: ${targets.target} -> ${targets.next}`);
+        break;
+      }
+    }
+
+    if (!targetElement) {
+      console.log('Gmail Read Receipts Extension: No suitable insertion point found, trying fallback');
+      // Fallback: insert at end of email row
+      targetElement = emailElement.querySelector('td:last-child') || emailElement;
+      if (targetElement) {
+        nextElement = null; // Will append
+      }
+    }
+
+    if (!targetElement) {
+      console.log('Gmail Read Receipts Extension: Could not find insertion point for email');
+      return;
+    }
 
     // Check if ticks already exist
-    if (emailElement.querySelector('.read-receipt-ticks')) return;
+    if (emailElement.querySelector('.read-receipt-ticks')) {
+      console.log('Gmail Read Receipts Extension: Ticks already exist for this email');
+      return;
+    }
 
     const ticksContainer = document.createElement('div');
     ticksContainer.className = 'read-receipt-ticks';
     ticksContainer.setAttribute('data-email-id', emailId);
+    ticksContainer.style.display = 'inline-flex';
+    ticksContainer.style.marginLeft = '8px';
 
     // Determine tick status based on email age and extension state
     const tickStatus = this.determineTickStatus(emailElement, emailId);
     ticksContainer.innerHTML = this.createTicksHTML(tickStatus);
 
-    // Insert between .apU.xY and .oZ-x3.xY
-    targetElement.parentNode.insertBefore(ticksContainer, nextElement);
+    console.log(`Gmail Read Receipts Extension: Adding ticks with status: ${tickStatus}`);
+
+    try {
+      if (nextElement) {
+        targetElement.parentNode.insertBefore(ticksContainer, nextElement);
+      } else {
+        targetElement.appendChild(ticksContainer);
+      }
+      console.log('Gmail Read Receipts Extension: Ticks added successfully');
+    } catch (error) {
+      console.error('Gmail Read Receipts Extension: Error adding ticks:', error);
+    }
 
     // Update tick status from server
     this.updateTickStatusFromServer(emailId, ticksContainer);
