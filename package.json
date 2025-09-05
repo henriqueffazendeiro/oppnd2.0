@@ -1,0 +1,21 @@
+{
+  "name": "gmail-read-receipts",
+  "version": "1.0.0",
+  "description": "Gmail extension that adds WhatsApp-style read receipts",
+  "main": "index.js",
+  "scripts": {
+    "build": "echo 'Extension built successfully'",
+    "dev": "echo 'Development mode - load extension in Chrome'",
+    "deploy": "vercel --prod"
+  },
+  "keywords": [
+    "gmail",
+    "chrome-extension",
+    "read-receipts",
+    "whatsapp"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "devDependencies": {},
+  "dependencies": {}
+}

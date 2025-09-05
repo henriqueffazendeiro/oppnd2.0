@@ -1,0 +1,29 @@
+{
+  "manifest_version": 3,
+  "name": "Gmail Read Receipts",
+  "version": "1.0.0",
+  "description": "Adiciona ticks de leitura ao Gmail como no WhatsApp",
+  "permissions": [
+    "storage",
+    "activeTab"
+  ],
+  "host_permissions": [
+    "https://mail.google.com/*",
+    "https://your-vercel-domain.vercel.app/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["https://mail.google.com/*"],
+      "js": ["content.js"],
+      "css": ["styles.css"],
+      "run_at": "document_end"
+    }
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Gmail Read Receipts"
+  }
+}
