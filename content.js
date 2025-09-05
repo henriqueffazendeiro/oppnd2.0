@@ -68,7 +68,7 @@ class GmailReadReceipts {
 
     if (!sentContainer) {
       // Try finding emails anywhere if we're in sent folder
-      const emails = document.querySelectorAll('.zA.yO, .zA.zE, tr.zA');
+      const emails = document.querySelectorAll('tr.zA.yO, tr.zA.zE, tr.zA');
       if (emails.length > 0) {
         console.log(`Gmail Read Receipts Extension: Found ${emails.length} emails (fallback method)`);
         emails.forEach(email => this.processEmail(email, 'sent'));
@@ -76,14 +76,14 @@ class GmailReadReceipts {
       return;
     }
 
-    const emails = sentContainer.querySelectorAll('.zA.yO, .zA.zE, tr.zA');
+    const emails = sentContainer.querySelectorAll('tr.zA.yO, tr.zA.zE, tr.zA');
     console.log(`Gmail Read Receipts Extension: Found ${emails.length} sent emails`);
     emails.forEach(email => this.processEmail(email, 'sent'));
   }
 
   processInboxEmails() {
     // Process emails in inbox
-    const emails = document.querySelectorAll('.zA.yO, .zA.zE');
+    const emails = document.querySelectorAll('tr.zA.yO, tr.zA.zE');
     emails.forEach(email => {
       if (!email.closest('.TN.bzz.aHS-bnu')) {
         this.processEmail(email, 'inbox');
