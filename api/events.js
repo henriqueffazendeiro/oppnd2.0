@@ -1,5 +1,6 @@
 // Server-Sent Events endpoint for Gmail Ticks
 const connections = new Map(); // clientId -> response
+const readEmails = new Set(); // emailIds that have been read
 
 export default function handler(req, res) {
   const clientId = req.query.u;
@@ -43,5 +44,5 @@ export default function handler(req, res) {
   });
 }
 
-// Export connections for other endpoints to use
-export { connections };
+// Export connections and readEmails for other endpoints to use
+export { connections, readEmails };

@@ -1,4 +1,4 @@
-import { connections } from '../events.js';
+import { connections, readEmails } from '../events.js';
 
 export default async function handler(req, res) {
   const { emailId } = req.query;
@@ -9,6 +9,7 @@ export default async function handler(req, res) {
   }
 
   // Mark as read (you can store in database here)
+  readEmails.add(emailId);
   console.log(`Email read: ${emailId} by client: ${clientId}`);
 
   // Send SSE event to connected clients
