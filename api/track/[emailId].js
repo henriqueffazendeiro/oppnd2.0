@@ -1,28 +1,22 @@
-export default async function handler(req, res) {
-  const { emailId } = req.query;
-  const clientId = req.query.u;
+export const config = { runtime: 'edge' };
+import { kvSetJSON } from '../_kv.js';
 
-  if (!emailId) {
-    return res.status(400).json({ error: 'Missing emailId' });
-  }
+const PX = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=';
 
-  console.log(`Email read: ${emailId} by client: ${clientId}`);
+export default async function handler(req, ctx) {
+  const { emailId } = ctx.params || {};
+  if (!emailId) return new Response('Missing id', { status: 400 });
 
-  // Return JavaScript that posts a message to notify the extension
-  const script = `
-    <script>
-      try {
-        window.parent.postMessage({
-          type: 'GMAIL_TICKS_EMAIL_READ',
-          trackingId: '${emailId}',
-          clientId: '${clientId || ''}'
-        }, '*');
-      } catch(e) {}
-    </script>
-    <img width="1" height="1" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChAI/hTBx4wAAAABJRU5ErkJggg==" />
-  `;
+  // marca como lido com timestamp (idempotente)
+  await kvSetJSON(`read:${emailId}`, { status: 'read', readAt: Date.now() });
 
-  res.setHeader('Content-Type', 'text/html');
-  res.setHeader('Access-Control-Allow-Origin', 'https://mail.google.com');
-  res.send(script);
+  // devolve 1x1 PNG
+  const bytes = Uint8Array.from(atob(PX), c => c.charCodeAt(0));
+  return new Response(bytes, {
+    headers: {
+      'Content-Type': 'image/png',
+      'Cache-Control': 'no-store',
+      'Access-Control-Allow-Origin': 'https://mail.google.com',
+    }
+  });
 }

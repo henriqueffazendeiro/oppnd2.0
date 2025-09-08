@@ -1,19 +1,21 @@
-export default function handler(req, res) {
-  const { emailId } = req.query;
-  
-  if (!emailId) {
-    return res.status(400).json({ error: 'Missing emailId' });
-  }
-  
-  // Use a simple timestamp-based approach
-  // If this endpoint is called, assume it's being tracked
-  // The real read detection happens via pixel in /api/track/[emailId]
-  console.log(`Status check for: ${emailId} - sent (awaiting read)`);
-  
-  res.setHeader('Access-Control-Allow-Origin', 'https://mail.google.com');
-  res.setHeader('Access-Control-Allow-Methods', 'GET');
-  res.setHeader('Content-Type', 'application/json');
-  
-  // Always return 'sent' - reads are detected via SSE from pixel tracking
-  res.json({ status: 'sent' });
+export const config = { runtime: 'edge' };
+import { kvGetJSON } from '../_kv.js';
+
+export default async function handler(req, ctx) {
+  const { emailId } = ctx.params || {};
+  if (!emailId) return new Response(JSON.stringify({ error: 'Missing id' }), {
+    status: 400, headers: { 'Content-Type': 'application/json' }
+  });
+
+  const rec = await kvGetJSON(`read:${emailId}`);
+  const status = rec?.status === 'read' ? 'read' : 'sent';
+  const body = { status, readAt: rec?.readAt || null };
+
+  return new Response(JSON.stringify(body), {
+    headers: {
+      'Content-Type': 'application/json',
+      'Access-Control-Allow-Origin': 'https://mail.google.com',
+      'Cache-Control': 'no-store'
+    }
+  });
 }

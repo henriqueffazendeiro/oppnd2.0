@@ -1,25 +1,14 @@
-export default function handler(req, res) {
+export const config = { runtime: 'edge' };
+import { kvSetJSON } from './_kv.js';
+
+export default async function handler(req) {
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+    return new Response('Method Not Allowed', { status: 405 });
   }
+  const body = await req.json().catch(() => ({}));
+  const { emailId, to, subject } = body || {};
+  if (!emailId) return new Response('Missing emailId', { status: 400 });
 
-  const { emailId, to, subject, clientId } = req.body;
-
-  if (!emailId) {
-    return res.status(400).json({ error: 'Missing emailId' });
-  }
-
-  // Store email info (you can save to database here)
-  console.log(`Email sent: ${emailId} to ${to} subject: ${subject} client: ${clientId}`);
-  
-  res.setHeader('Access-Control-Allow-Origin', 'https://mail.google.com');
-  res.setHeader('Access-Control-Allow-Methods', 'POST');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  res.setHeader('Content-Type', 'application/json');
-
-  res.json({ 
-    success: true, 
-    emailId,
-    message: 'Email tracking registered' 
-  });
+  await kvSetJSON(`meta:${emailId}`, { to: to || '', subject: subject || '', createdAt: Date.now() }, 60*60*24*30);
+  return new Response(JSON.stringify({ ok: true }), { headers: { 'Content-Type': 'application/json' } });
 }
