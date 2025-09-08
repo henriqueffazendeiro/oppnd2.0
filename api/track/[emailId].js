@@ -1,5 +1,3 @@
-import { connections, readEmails } from '../events.js';
-
 export default async function handler(req, res) {
   const { emailId } = req.query;
   const clientId = req.query.u;
@@ -8,26 +6,23 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Missing emailId' });
   }
 
-  // Mark as read (you can store in database here)
-  readEmails.add(emailId);
   console.log(`Email read: ${emailId} by client: ${clientId}`);
 
-  // Send SSE event to connected clients
-  if (clientId && connections.has(clientId)) {
-    const connection = connections.get(clientId);
-    try {
-      connection.write('event: emailRead\n');
-      connection.write(`data: {"trackingId":"${emailId}"}\n\n`);
-      console.log(`SSE sent emailRead to ${clientId}`);
-    } catch (e) {
-      connections.delete(clientId);
-    }
-  }
+  // Return JavaScript that posts a message to notify the extension
+  const script = `
+    <script>
+      try {
+        window.parent.postMessage({
+          type: 'GMAIL_TICKS_EMAIL_READ',
+          trackingId: '${emailId}',
+          clientId: '${clientId || ''}'
+        }, '*');
+      } catch(e) {}
+    </script>
+    <img width="1" height="1" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChAI/hTBx4wAAAABJRU5ErkJggg==" />
+  `;
 
-  // Return 1x1 transparent pixel
-  const pixel = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChAI/hTBx4wAAAABJRU5ErkJggg==', 'base64');
-  
-  res.setHeader('Content-Type', 'image/png');
+  res.setHeader('Content-Type', 'text/html');
   res.setHeader('Access-Control-Allow-Origin', 'https://mail.google.com');
-  res.send(pixel);
+  res.send(script);
 }

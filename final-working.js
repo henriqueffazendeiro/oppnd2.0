@@ -45,6 +45,14 @@ chrome.runtime.onMessage.addListener((msg) => {
   }
 });
 
+// Listen for postMessage from tracking pixels
+window.addEventListener('message', (event) => {
+  if (event.data?.type === 'GMAIL_TICKS_EMAIL_READ' && event.data?.trackingId) {
+    console.log('Gmail Ticks: Received email read notification via postMessage', event.data.trackingId);
+    markAsRead(event.data.trackingId);
+  }
+});
+
 // ======= Helpers =======
 function normalizeSubject(text) {
   if (!text) return '';
