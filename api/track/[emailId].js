@@ -1,22 +1,17 @@
-export const config = { runtime: 'edge' };
-import { kvSetJSON } from '../_kv.js';
+import { readMap } from '../_storage.js';
 
-const PX = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=';
+// 1x1 PNG
+const PX = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=', 'base64');
 
-export default async function handler(req, ctx) {
-  const { emailId } = ctx.params || {};
-  if (!emailId) return new Response('Missing id', { status: 400 });
+export default function handler(req, res) {
+  const { emailId } = req.query;
+  if (!emailId) return res.status(400).send('Missing id');
 
-  // marca como lido com timestamp (idempotente)
-  await kvSetJSON(`read:${emailId}`, { status: 'read', readAt: Date.now() });
+  // marca como lido
+  readMap.set(emailId, { status: 'read', readAt: Date.now() });
 
-  // devolve 1x1 PNG
-  const bytes = Uint8Array.from(atob(PX), c => c.charCodeAt(0));
-  return new Response(bytes, {
-    headers: {
-      'Content-Type': 'image/png',
-      'Cache-Control': 'no-store',
-      'Access-Control-Allow-Origin': 'https://mail.google.com',
-    }
-  });
+  res.setHeader('Content-Type', 'image/png');
+  res.setHeader('Cache-Control', 'no-store');
+  res.setHeader('Access-Control-Allow-Origin', 'https://mail.google.com');
+  res.send(PX);
 }

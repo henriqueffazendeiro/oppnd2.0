@@ -1,13 +1,10 @@
 {
-  "manifest_version": 3,
-  "name": "Gmail Read Receipts",
+  "name": "Gmail Read Ticks",
+  "description": "1 tick (não rastreado), 2 cinzentos (enviado), 2 azuis (lido) no Gmail.",
   "version": "1.0.0",
-  "description": "Adiciona ticks de leitura ao Gmail como no WhatsApp",
-  "permissions": [
-    "storage",
-    "activeTab",
-    "tabs"
-  ],
+  "manifest_version": 3,
+  "icons": {},
+  "permissions": ["storage"],
   "host_permissions": [
     "https://mail.google.com/*",
     "https://oppnd.vercel.app/*"
@@ -15,16 +12,11 @@
   "content_scripts": [
     {
       "matches": ["https://mail.google.com/*"],
-      "js": ["final-working.js"],
-      "css": ["styles.css"],
-      "run_at": "document_end"
+      "js": ["content.js"],
+      "run_at": "document_idle"
     }
   ],
-  "background": {
-    "service_worker": "background.js"
-  },
   "action": {
-    "default_popup": "popup.html",
-    "default_title": "Gmail Read Receipts"
+    "default_title": "Gmail Read Ticks"
   }
 }

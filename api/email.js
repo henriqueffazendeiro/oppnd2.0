@@ -1,14 +1,16 @@
-export const config = { runtime: 'edge' };
-import { kvSetJSON } from './_kv.js';
+import { metaMap } from './_storage.js';
 
-export default async function handler(req) {
+export default function handler(req, res) {
   if (req.method !== 'POST') {
-    return new Response('Method Not Allowed', { status: 405 });
+    return res.status(405).json({ error: 'Method not allowed' });
   }
-  const body = await req.json().catch(() => ({}));
-  const { emailId, to, subject } = body || {};
-  if (!emailId) return new Response('Missing emailId', { status: 400 });
-
-  await kvSetJSON(`meta:${emailId}`, { to: to || '', subject: subject || '', createdAt: Date.now() }, 60*60*24*30);
-  return new Response(JSON.stringify({ ok: true }), { headers: { 'Content-Type': 'application/json' } });
+  
+  const { emailId, to, subject } = req.body || {};
+  if (!emailId) return res.status(400).json({ error: 'Missing emailId' });
+  
+  metaMap.set(emailId, { to: to || '', subject: subject || '', createdAt: Date.now() });
+  
+  res.setHeader('Access-Control-Allow-Origin', 'https://mail.google.com');
+  res.setHeader('Content-Type', 'application/json');
+  res.json({ ok: true });
 }

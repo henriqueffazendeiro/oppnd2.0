@@ -1,21 +1,12 @@
-export const config = { runtime: 'edge' };
-import { kvGetJSON } from '../_kv.js';
+import { readMap } from '../_storage.js';
 
-export default async function handler(req, ctx) {
-  const { emailId } = ctx.params || {};
-  if (!emailId) return new Response(JSON.stringify({ error: 'Missing id' }), {
-    status: 400, headers: { 'Content-Type': 'application/json' }
-  });
-
-  const rec = await kvGetJSON(`read:${emailId}`);
-  const status = rec?.status === 'read' ? 'read' : 'sent';
-  const body = { status, readAt: rec?.readAt || null };
-
-  return new Response(JSON.stringify(body), {
-    headers: {
-      'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': 'https://mail.google.com',
-      'Cache-Control': 'no-store'
-    }
-  });
+export default function handler(req, res) {
+  const { emailId } = req.query;
+  const entry = readMap.get(emailId);
+  const status = entry?.status === 'read' ? 'read' : 'sent';
+  
+  res.setHeader('Cache-Control', 'no-store');
+  res.setHeader('Access-Control-Allow-Origin', 'https://mail.google.com');
+  res.setHeader('Content-Type', 'application/json');
+  res.json({ status, readAt: entry?.readAt || null });
 }
