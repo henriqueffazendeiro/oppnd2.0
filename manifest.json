@@ -5,16 +5,17 @@
   "description": "Adiciona ticks de leitura ao Gmail como no WhatsApp",
   "permissions": [
     "storage",
-    "activeTab"
+    "activeTab",
+    "tabs"
   ],
   "host_permissions": [
     "https://mail.google.com/*",
-    "https://your-vercel-domain.vercel.app/*"
+    "https://oppnd.vercel.app/*"
   ],
   "content_scripts": [
     {
       "matches": ["https://mail.google.com/*"],
-      "js": ["content.js"],
+      "js": ["final-working.js"],
       "css": ["styles.css"],
       "run_at": "document_end"
     }
